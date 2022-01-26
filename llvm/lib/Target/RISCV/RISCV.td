@@ -180,14 +180,14 @@ def FeatureI2p1
     : SubtargetFeature<"i2p1", "IsI2p1", "true", "Implements I 2.1">;
 
 def FeatureStdExtZicsr
-    : SubtargetFeature<"zicsr", "StdExtZicsr", "RISCVExtensionVersion{0, 10}",
+    : SubtargetFeature<"zicsr", "StdExtZicsr", "RISCVExtensionVersion{2, 0}",
                        "'Zicsr' (Control and Status Register)">;
 def HasStdExtZicsr : Predicate<"Subtarget->hasStdExtZicsr()">,
                                AssemblerPredicate<(all_of FeatureStdExtZicsr),
                                "'Zicsr' (Control and Status Register)">;
 
 def FeatureStdExtZifencei
-    : SubtargetFeature<"zifencei", "StdExtZifencei", "RISCVExtensionVersion{0, 10}",
+    : SubtargetFeature<"zifencei", "StdExtZifencei", "RISCVExtensionVersion{2, 0}",
                        "'Zifencei' (Instruction-Fetch Fence)">;
 def HasStdExtZifencei : Predicate<"Subtarget->hasStdExtZifencei()">,
                                   AssemblerPredicate<(all_of FeatureStdExtZifencei),
