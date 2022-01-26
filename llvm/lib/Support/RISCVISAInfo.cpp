@@ -800,7 +800,7 @@ std::string RISCVISAInfo::toString() const {
   raw_string_ostream Arch(Buffer);
 
   Arch << "rv" << XLen;
-f
+
   ListSeparator LS("_");
   for (auto &Ext : Exts) {
     StringRef ExtName = Ext.first;
