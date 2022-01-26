@@ -51,7 +51,8 @@ public:
 
   /// Parse RISCV ISA info from feature vector.
   static llvm::Expected<std::unique_ptr<RISCVISAInfo>>
-  parseFeatures(unsigned XLen, const std::vector<std::string> &Features);
+  parseFeatures(unsigned XLen, bool IsI2p1,
+                const std::vector<std::string> &Features);
 
   /// Convert RISCV ISA info to a feature vector.
   void toFeatures(std::vector<StringRef> &Features,
@@ -61,6 +62,7 @@ public:
 
   unsigned getXLen() const { return XLen; };
   unsigned getFLen() const { return FLen; };
+  bool getIsI2p1() const { return IsI2p1; };
 
   bool hasExtension(StringRef Ext) const;
   std::string toString() const;
@@ -75,6 +77,7 @@ private:
 
   unsigned XLen;
   unsigned FLen;
+  bool IsI2p1;
 
   OrderedExtensionMap Exts;
 

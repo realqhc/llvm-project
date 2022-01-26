@@ -52,6 +52,9 @@ class RISCVSubtarget : public RISCVGenSubtargetInfo {
   bool HasStdExtV = false;
   bool HasStdExtZvlsseg = false;
   bool HasStdExtZvamo = false;
+  bool IsI2p1 = false;
+  bool HasStdExtZicsr = false;
+  bool HasStdExtZifencei = false;
   bool HasStdExtZfhmin = false;
   bool HasStdExtZfh = false;
   bool HasRV64 = false;
@@ -119,6 +122,8 @@ public:
   bool hasStdExtV() const { return HasStdExtV; }
   bool hasStdExtZvlsseg() const { return HasStdExtZvlsseg; }
   bool hasStdExtZvamo() const { return HasStdExtZvamo; }
+  bool hasStdExtZicsr() const { return HasStdExtZicsr; }
+  bool hasStdExtZifencei() const { return HasStdExtZifencei; }
   bool hasStdExtZfhmin() const { return HasStdExtZfhmin; }
   bool hasStdExtZfh() const { return HasStdExtZfh; }
   bool is64Bit() const { return HasRV64; }
@@ -144,6 +149,13 @@ public:
   bool hasVInstructionsAnyF() const { return hasVInstructionsF32(); }
   unsigned getMaxInterleaveFactor() const {
     return hasVInstructions() ? MaxInterleaveFactor : 1;
+  }
+
+  bool HasI2p0OrZicsr() {
+    return (IsI2p1 && HasStdExtZicsr) || (!IsI2p1 && !HasStdExtZicsr);
+  }
+  bool HasI2p0OrZifencei() {
+    return (IsI2p1 && HasStdExtZifencei) || (!IsI2p1 && !HasStdExtZifencei);
   }
 
 protected:

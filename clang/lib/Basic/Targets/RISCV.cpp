@@ -233,7 +233,7 @@ bool RISCVTargetInfo::hasFeature(StringRef Feature) const {
 bool RISCVTargetInfo::handleTargetFeatures(std::vector<std::string> &Features,
                                            DiagnosticsEngine &Diags) {
   unsigned XLen = getTriple().isArch64Bit() ? 64 : 32;
-  auto ParseResult = llvm::RISCVISAInfo::parseFeatures(XLen, Features);
+  auto ParseResult = llvm::RISCVISAInfo::parseFeatures(XLen, false, Features);
   if (!ParseResult) {
     std::string Buffer;
     llvm::raw_string_ostream OutputErrMsg(Buffer);

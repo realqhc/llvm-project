@@ -572,6 +572,7 @@ def FENCE_TSO : RVInstI<0b000, OPC_MISC_MEM, (outs), (ins), "fence.tso", "">, Sc
   let imm12 = {0b1000,0b0011,0b0011};
 }
 
+let Predicates = [HasI2p0OrZifencei] in
 def FENCE_I : RVInstI<0b001, OPC_MISC_MEM, (outs), (ins), "fence.i", "">, Sched<[]> {
   let rs1 = 0;
   let rd = 0;
@@ -602,6 +603,7 @@ def UNIMP : RVInstI<0b001, OPC_SYSTEM, (outs), (ins), "unimp", "">,
 }
 } // hasSideEffects = 1, mayLoad = 0, mayStore = 0
 
+let Predicates = [HasI2p0OrZicsr] in {
 def CSRRW : CSR_ir<0b001, "csrrw">;
 def CSRRS : CSR_ir<0b010, "csrrs">;
 def CSRRC : CSR_ir<0b011, "csrrc">;
@@ -609,6 +611,7 @@ def CSRRC : CSR_ir<0b011, "csrrc">;
 def CSRRWI : CSR_ii<0b101, "csrrwi">;
 def CSRRSI : CSR_ii<0b110, "csrrsi">;
 def CSRRCI : CSR_ii<0b111, "csrrci">;
+} // Predicates = [HasI2p0OrZicsr]
 
 /// RV64I instructions
 
@@ -794,6 +797,7 @@ def : InstAlias<"rdcycleh $rd",   (CSRRS GPR:$rd, CYCLEH.Encoding, X0)>;
 def : InstAlias<"rdtimeh $rd",    (CSRRS GPR:$rd, TIMEH.Encoding, X0)>;
 } // Predicates = [IsRV32]
 
+let Predicates = [HasI2p0OrZicsr] in {
 def : InstAlias<"csrr $rd, $csr", (CSRRS GPR:$rd, csr_sysreg:$csr,      X0)>;
 def : InstAlias<"csrw $csr, $rs", (CSRRW      X0, csr_sysreg:$csr, GPR:$rs)>;
 def : InstAlias<"csrs $csr, $rs", (CSRRS      X0, csr_sysreg:$csr, GPR:$rs)>;
@@ -812,6 +816,7 @@ def : InstAlias<"csrrw $rd, $csr, $imm", (CSRRWI GPR:$rd, csr_sysreg:$csr, uimm5
 def : InstAlias<"csrrs $rd, $csr, $imm", (CSRRSI GPR:$rd, csr_sysreg:$csr, uimm5:$imm)>;
 def : InstAlias<"csrrc $rd, $csr, $imm", (CSRRCI GPR:$rd, csr_sysreg:$csr, uimm5:$imm)>;
 }
+} // Predicates = [HasI2p0OrZicsr]
 
 def : InstAlias<"sfence.vma",     (SFENCE_VMA      X0, X0)>;
 def : InstAlias<"sfence.vma $rs", (SFENCE_VMA GPR:$rs, X0)>;

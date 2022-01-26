@@ -49,7 +49,9 @@ void RISCVTargetStreamer::emitTargetAttributes(const MCSubtargetInfo &STI) {
   std::vector<std::string> FeatureVector;
   RISCVFeatures::toFeatureVector(FeatureVector, STI.getFeatureBits());
 
-  auto ParseResult = llvm::RISCVISAInfo::parseFeatures(XLen, FeatureVector);
+  bool IsI2p1 = STI.hasFeature(RISCV::FeatureI2p1);
+  auto ParseResult =
+      llvm::RISCVISAInfo::parseFeatures(XLen, false, FeatureVector);
   if (!ParseResult) {
     /* Assume any error about features should handled earlier.  */
     consumeError(ParseResult.takeError());

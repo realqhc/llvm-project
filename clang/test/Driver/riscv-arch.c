@@ -307,10 +307,10 @@
 // RV32-IMINOR-MISS: error: invalid arch name 'rv32i2p',
 // RV32-IMINOR-MISS: minor version number missing after 'p' for extension 'i'
 
-// RUN: %clang -target riscv32-unknown-elf -march=rv32i2p1 -### %s \
+// RUN: %clang -target riscv32-unknown-elf -march=rv32i2p2 -### %s \
 // RUN: -fsyntax-only 2>&1 | FileCheck -check-prefix=RV32-IMINOR1 %s
-// RV32-IMINOR1: error: invalid arch name 'rv32i2p1', unsupported
-// RV32-IMINOR1: version number 2.1 for extension 'i'
+// RV32-IMINOR1: error: invalid arch name 'rv32i2p2', unsupported
+// RV32-IMINOR1: version number 2.2 for extension 'i'
 
 // RUN: %clang -target riscv32-unknown-elf -march=rv32ixt2p -### %s \
 // RUN: -fsyntax-only 2>&1 | FileCheck -check-prefix=RV32-XMINOR-MISS %s

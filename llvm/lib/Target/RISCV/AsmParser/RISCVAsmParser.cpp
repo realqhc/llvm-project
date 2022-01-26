@@ -2157,6 +2157,9 @@ bool RISCVAsmParser::parseDirectiveAttribute() {
       if (ISAInfo->hasExtension(Feature.Key))
         setFeatureBits(Feature.Value, Feature.Key);
 
+    if (ISAInfo->getIsI2p1())
+      setFeatureBits(RISCV::FeatureI2p1, "i2p1");
+
     if (ISAInfo->getXLen() == 32)
       clearFeatureBits(RISCV::Feature64Bit, "64bit");
     else if (ISAInfo->getXLen() == 64)

@@ -176,6 +176,26 @@ def HasStdExtZvamo : Predicate<"Subtarget->hasStdExtZvamo()">,
                                AssemblerPredicate<(all_of FeatureStdExtZvamo),
                                "'Zvamo' (Vector AMO Operations)">;
 
+def FeatureI2p1
+    : SubtargetFeature<"i2p1", "IsI2p1", "true", "Implements I 2.1">;
+
+def FeatureStdExtZicsr
+    : SubtargetFeature<"zicsr", "HasStdExtZicsr", "true",
+                       "'Zicsr' (Control and Status Register)">;
+def HasStdExtZicsr : Predicate<"Subtarget->hasStdExtZicsr()">,
+                               AssemblerPredicate<(all_of FeatureStdExtZicsr),
+                               "'Zicsr' (Control and Status Register)">;
+
+def FeatureStdExtZifencei
+    : SubtargetFeature<"zifencei", "HasStdExtZifencei", "true",
+                       "'Zifencei' (Instruction-Fetch Fence)">;
+def HasStdExtZifencei : Predicate<"Subtarget->hasStdExtZifencei()">,
+                                  AssemblerPredicate<(all_of FeatureStdExtZifencei),
+                                  "'Zifencei' (Instruction-Fetch Fence)">;
+
+def HasI2p0OrZicsr       : Predicate<"Subtarget->HasI2p0OrZicsr()">;
+def HasI2p0OrZifencei    : Predicate<"Subtarget->HasI2p0OrZifencei()">;
+
 def Feature64Bit
     : SubtargetFeature<"64bit", "HasRV64", "true", "Implements RV64">;
 def IsRV64 : Predicate<"Subtarget->is64Bit()">,

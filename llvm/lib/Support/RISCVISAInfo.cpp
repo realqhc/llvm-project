@@ -30,42 +30,45 @@ struct RISCVExtensionVersion {
 
 struct RISCVSupportedExtension {
   const char *Name;
-  /// Supported version.
-  RISCVExtensionVersion Version;
+  /// Supported versions.
+  std::array<RISCVExtensionVersion, 2> Versions;
 };
 
 } // end anonymous namespace
 
 static constexpr StringLiteral AllStdExts = "mafdqlcbjtpvn";
 
-static const RISCVSupportedExtension SupportedExtensions[] = {
-    {"i", RISCVExtensionVersion{2, 0}},
-    {"e", RISCVExtensionVersion{1, 9}},
-    {"m", RISCVExtensionVersion{2, 0}},
-    {"a", RISCVExtensionVersion{2, 0}},
-    {"f", RISCVExtensionVersion{2, 0}},
-    {"d", RISCVExtensionVersion{2, 0}},
-    {"c", RISCVExtensionVersion{2, 0}},
+const RISCVSupportedExtension SupportedExtensions[] = {
+    {"i", {RISCVExtensionVersion{2, 0}, RISCVExtensionVersion{2, 1}}},
+    {"e", {RISCVExtensionVersion{1, 9}}},
+    {"m", {RISCVExtensionVersion{2, 0}}},
+    {"a", {RISCVExtensionVersion{2, 0}}},
+    {"f", {RISCVExtensionVersion{2, 0}}},
+    {"d", {RISCVExtensionVersion{2, 0}}},
+    {"c", {RISCVExtensionVersion{2, 0}}},
+
+    {"zicsr", {RISCVExtensionVersion{2, 0}}},
+    {"zifencei", {RISCVExtensionVersion{2, 0}}},
 };
 
-static const RISCVSupportedExtension SupportedExperimentalExtensions[] = {
-    {"v", RISCVExtensionVersion{0, 10}},
-    {"zba", RISCVExtensionVersion{1, 0}},
-    {"zbb", RISCVExtensionVersion{1, 0}},
-    {"zbc", RISCVExtensionVersion{1, 0}},
-    {"zbe", RISCVExtensionVersion{0, 93}},
-    {"zbf", RISCVExtensionVersion{0, 93}},
-    {"zbm", RISCVExtensionVersion{0, 93}},
-    {"zbp", RISCVExtensionVersion{0, 93}},
-    {"zbr", RISCVExtensionVersion{0, 93}},
-    {"zbs", RISCVExtensionVersion{1, 0}},
-    {"zbt", RISCVExtensionVersion{0, 93}},
+const RISCVSupportedExtension SupportedExperimentalExtensions[] = {
+    {"v", {RISCVExtensionVersion{0, 10}}},
+    {"zba", {RISCVExtensionVersion{1, 0}}},
+    {"zbb", {RISCVExtensionVersion{1, 0}}},
+    {"zbc", {RISCVExtensionVersion{1, 0}}},
+    {"zbe", {RISCVExtensionVersion{0, 93}}},
+    {"zbf", {RISCVExtensionVersion{0, 93}}},
+    {"zbm", {RISCVExtensionVersion{0, 93}}},
+    {"zbp", {RISCVExtensionVersion{0, 93}}},
+    {"zbr", {RISCVExtensionVersion{0, 93}}},
+    {"zbs", {RISCVExtensionVersion{1, 0}}},
+    {"zbt", {RISCVExtensionVersion{0, 93}}},
 
-    {"zvamo", RISCVExtensionVersion{0, 10}},
-    {"zvlsseg", RISCVExtensionVersion{0, 10}},
+    {"zvamo", {RISCVExtensionVersion{0, 10}}},
+    {"zvlsseg", {RISCVExtensionVersion{0, 10}}},
 
-    {"zfhmin", RISCVExtensionVersion{0, 1}},
-    {"zfh", RISCVExtensionVersion{0, 1}},
+    {"zfhmin", {RISCVExtensionVersion{0, 1}}},
+    {"zfh", {RISCVExtensionVersion{0, 1}}},
 };
 
 static bool stripExperimentalPrefix(StringRef &Ext) {
@@ -112,7 +115,7 @@ static Optional<RISCVExtensionVersion> findDefaultVersion(StringRef ExtName) {
     if (ExtensionInfoIterator == ExtInfo.end()) {
       continue;
     }
-    return ExtensionInfoIterator->Version;
+    return ExtensionInfoIterator->Versions.front();
   }
   return None;
 }
@@ -156,7 +159,7 @@ static Optional<RISCVExtensionVersion> isExperimentalExtension(StringRef Ext) {
   if (ExtIterator == std::end(SupportedExperimentalExtensions))
     return None;
 
-  return ExtIterator->Version;
+  return ExtIterator->Versions.front();
 }
 
 bool RISCVISAInfo::isSupportedExtensionFeature(StringRef Ext) {
@@ -176,8 +179,11 @@ bool RISCVISAInfo::isSupportedExtension(StringRef Ext) {
 bool RISCVISAInfo::isSupportedExtension(StringRef Ext, unsigned MajorVersion,
                                         unsigned MinorVersion) {
   auto FindByNameAndVersion = [=](const RISCVSupportedExtension &ExtInfo) {
-    return ExtInfo.Name == Ext && (MajorVersion == ExtInfo.Version.Major) &&
-           (MinorVersion == ExtInfo.Version.Minor);
+    for (const auto &Version : ExtInfo.Versions)
+      if (ExtInfo.Name == Ext && (MajorVersion == Version.Major) &&
+          (MinorVersion == Version.Minor))
+        return true;
+    return false;
   };
   return llvm::any_of(SupportedExtensions, FindByNameAndVersion) ||
          llvm::any_of(SupportedExperimentalExtensions, FindByNameAndVersion);
@@ -279,9 +285,16 @@ void RISCVISAInfo::toFeatures(
     std::function<StringRef(const Twine &)> StrAlloc) const {
   for (auto &Ext : Exts) {
     StringRef ExtName = Ext.first;
+    unsigned Major = Ext.second.MajorVersion;
+    unsigned Minor = Ext.second.MinorVersion;
 
-    if (ExtName == "i")
+    if (ExtName == "i") {
+      if (Major == 2 && Minor == 0) {
+        Features.push_back("+zicsr");
+        Features.push_back("+zifencei");
+      }
       continue;
+    }
 
     if (ExtName == "zvlsseg") {
       Features.push_back("+experimental-v");
@@ -407,7 +420,7 @@ static Error getExtensionVersion(StringRef Ext, StringRef In, unsigned &Major,
 }
 
 llvm::Expected<std::unique_ptr<RISCVISAInfo>>
-RISCVISAInfo::parseFeatures(unsigned XLen,
+RISCVISAInfo::parseFeatures(unsigned XLen, bool IsI2p1,
                             const std::vector<std::string> &Features) {
   assert(XLen == 32 || XLen == 64);
   std::unique_ptr<RISCVISAInfo> ISAInfo(new RISCVISAInfo(XLen));
@@ -431,11 +444,15 @@ RISCVISAInfo::parseFeatures(unsigned XLen,
       continue;
 
     if (Add)
-      ISAInfo->addExtension(ExtName, ExtensionInfoIterator->Version.Major,
-                            ExtensionInfoIterator->Version.Minor);
+      ISAInfo->addExtension(ExtName,
+                            ExtensionInfoIterator->Versions.front().Major,
+                            ExtensionInfoIterator->Versions.front().Minor);
     else
       ISAInfo->Exts.erase(ExtName.str());
   }
+
+  if (IsI2p1)
+    ISAInfo->addExtension("i", 2, 1);
 
   ISAInfo->updateImplication();
   ISAInfo->updateFLen();
@@ -520,9 +537,12 @@ RISCVISAInfo::parseArchString(StringRef Arch, bool EnableExperimentalExtension,
         ISAInfo->addExtension(Ext, Version->Major, Version->Minor);
       else
         llvm_unreachable("Default extension version not found?");
-  } else
+  } else {
     // Baseline is `i` or `e`
     ISAInfo->addExtension(std::string(1, Baseline), Major, Minor);
+    if (Baseline == 'i' && Major == 2 && Minor == 1)
+      ISAInfo->IsI2p1 = true;
+  }
 
   // Consume the base ISA version number and any '_' between rvxxx and the
   // first extension
