@@ -22,11 +22,6 @@
 using namespace llvm;
 
 namespace {
-/// Represents the major and version number components of a RISC-V extension
-struct RISCVExtensionVersion {
-  unsigned Major;
-  unsigned Minor;
-};
 
 struct RISCVSupportedExtension {
   const char *Name;
@@ -70,6 +65,11 @@ const RISCVSupportedExtension SupportedExperimentalExtensions[] = {
     {"zfhmin", {RISCVExtensionVersion{0, 1}}},
     {"zfh", {RISCVExtensionVersion{0, 1}}},
 };
+
+static Error getExtensionVersion(StringRef Ext, StringRef In, unsigned &Major,
+                                 unsigned &Minor, unsigned &ConsumeLength,
+                                 bool EnableExperimentalExtension,
+                                 bool ExperimentalExtensionVersionCheck);
 
 static bool stripExperimentalPrefix(StringRef &Ext) {
   return Ext.consume_front("experimental-");
@@ -124,8 +124,8 @@ void RISCVISAInfo::addExtension(StringRef ExtName, unsigned MajorVersion,
                                 unsigned MinorVersion) {
   RISCVExtensionInfo Ext;
   Ext.ExtName = ExtName.str();
-  Ext.MajorVersion = MajorVersion;
-  Ext.MinorVersion = MinorVersion;
+  Ext.Version.Major = MajorVersion;
+  Ext.Version.Minor = MinorVersion;
   Exts[ExtName.str()] = Ext;
 }
 
@@ -153,22 +153,46 @@ static StringRef getExtensionType(StringRef Ext) {
   return StringRef();
 }
 
-static Optional<RISCVExtensionVersion> isExperimentalExtension(StringRef Ext) {
-  auto ExtIterator =
-      llvm::find_if(SupportedExperimentalExtensions, FindByName(Ext));
-  if (ExtIterator == std::end(SupportedExperimentalExtensions))
-    return None;
+static std::vector<RISCVExtensionVersion>
+getExperimentalExtensionVersions(StringRef Ext) {
+  std::vector<RISCVExtensionVersion> Result;
+  for (auto &Extension : SupportedExperimentalExtensions) {
+    if (Extension.Name == Ext)
+      for (auto Version : Extension.Versions)
+        Result.push_back(Version);
+  }
 
-  return ExtIterator->Versions.front();
+  return Result;
 }
 
-bool RISCVISAInfo::isSupportedExtensionFeature(StringRef Ext) {
-  bool IsExperimental = stripExperimentalPrefix(Ext);
+Optional<RISCVExtensionInfo>
+RISCVISAInfo::isSupportedExtensionFeature(StringRef Ext) {
+  stripExperimentalPrefix(Ext);
 
-  if (IsExperimental)
-    return llvm::any_of(SupportedExperimentalExtensions, FindByName(Ext));
-  else
-    return llvm::any_of(SupportedExtensions, FindByName(Ext));
+  auto Pos = findFirstNonVersionCharacter(Ext) + 1;
+  StringRef Name(Ext.substr(0, Pos));
+  StringRef Vers(Ext.substr(Pos));
+
+  unsigned Major, Minor, ConsumeLength;
+  if (Vers.empty()) {
+    auto Version = findDefaultVersion(Name);
+    if (!Version)
+      return None;
+
+    Major = Version->Major;
+    Minor = Version->Minor;
+
+  } else if (auto E = getExtensionVersion(Name, Vers, Major, Minor,
+                                          ConsumeLength, true, false)) {
+    // Not all features is related to ISA extension, like `relax` or
+    // `save-restore`, skip those feature.
+    consumeError(std::move(E));
+    return None;
+  }
+  if (!isSupportedExtension(Name, Major, Minor))
+    return None;
+
+  return RISCVExtensionInfo{Name.str(), {Major, Minor}};
 }
 
 bool RISCVISAInfo::isSupportedExtension(StringRef Ext) {
@@ -196,6 +220,20 @@ bool RISCVISAInfo::hasExtension(StringRef Ext) const {
     return false;
 
   return Exts.count(Ext.str()) != 0;
+}
+
+bool RISCVISAInfo::hasExtensionWithVersion(StringRef Ext) const {
+  auto Info = isSupportedExtensionFeature(Ext);
+  if (!Info)
+    return false;
+
+  auto ExtInfoIt = Exts.find(Info->ExtName);
+
+  if (ExtInfoIt == Exts.end())
+    return false;
+
+  return ExtInfoIt->second.Version.Major == Info->Version.Major &&
+         ExtInfoIt->second.Version.Minor == Info->Version.Minor;
 }
 
 // Get the rank for single-letter extension, lower value meaning higher
@@ -280,33 +318,35 @@ bool RISCVISAInfo::compareExtension(const std::string &LHS,
   return LHS < RHS;
 }
 
-void RISCVISAInfo::toFeatures(
-    std::vector<StringRef> &Features,
-    std::function<StringRef(const Twine &)> StrAlloc) const {
+static std::string addVersionSuffix(StringRef Suffix, StringRef ExtName,
+                                    unsigned Major, unsigned Minor) {
+  if (auto DefaultVersion = findDefaultVersion(ExtName))
+    if (DefaultVersion->Major == Major && DefaultVersion->Minor == Minor)
+      return (Twine(Suffix) + ExtName).str();
+
+  return (Suffix + ExtName + Twine(Major) + "p" + Twine(Minor)).str();
+}
+
+void RISCVISAInfo::toFeatures(std::vector<std::string> &Features) const {
+
   for (auto &Ext : Exts) {
     StringRef ExtName = Ext.first;
-    unsigned Major = Ext.second.MajorVersion;
-    unsigned Minor = Ext.second.MinorVersion;
+    auto Extension = Ext.second;
+    unsigned Major = Ext.second.Version.Major;
+    unsigned Minor = Ext.second.Version.Minor;
 
-    if (ExtName == "i") {
-      if (Major == 2 && Minor == 0) {
-        Features.push_back("+zicsr");
-        Features.push_back("+zifencei");
-      }
+    if (ExtName == "i")
       continue;
-    }
 
     if (ExtName == "zvlsseg") {
-      Features.push_back("+experimental-v");
-      Features.push_back("+experimental-zvlsseg");
-    } else if (ExtName == "zvamo") {
-      Features.push_back("+experimental-v");
-      Features.push_back("+experimental-zvlsseg");
-      Features.push_back("+experimental-zvamo");
-    } else if (isExperimentalExtension(ExtName)) {
-      Features.push_back(StrAlloc("+experimental-" + ExtName));
+      Features.push_back(addVersionSuffix("experimental-", "v", Major, Minor));
+      Features.push_back(
+          addVersionSuffix("experimental-", "zvlsseg", Major, Minor));
+    } else if (!getExperimentalExtensionVersions(ExtName).empty()) {
+      Features.push_back(
+          addVersionSuffix("experimental-", ExtName, Major, Minor));
     } else {
-      Features.push_back(StrAlloc("+" + ExtName));
+      Features.push_back(addVersionSuffix("", ExtName, Major, Minor));
     }
   }
 }
@@ -364,7 +404,8 @@ static Error getExtensionVersion(StringRef Ext, StringRef In, unsigned &Major,
   }
 
   // If experimental extension, require use of current version number number
-  if (auto ExperimentalExtension = isExperimentalExtension(Ext)) {
+  auto ExperimentalExtension = getExperimentalExtensionVersions(Ext);
+  if (!ExperimentalExtension.empty()) {
     if (!EnableExperimentalExtension) {
       std::string Error = "requires '-menable-experimental-extensions' for "
                           "experimental extension '" +
@@ -380,18 +421,27 @@ static Error getExtensionVersion(StringRef Ext, StringRef In, unsigned &Major,
       return createStringError(errc::invalid_argument, Error);
     }
 
-    auto SupportedVers = *ExperimentalExtension;
-    if (ExperimentalExtensionVersionCheck &&
-        (Major != SupportedVers.Major || Minor != SupportedVers.Minor)) {
-      std::string Error = "unsupported version number " + MajorStr.str();
-      if (!MinorStr.empty())
-        Error += "." + MinorStr.str();
-      Error += " for experimental extension '" + Ext.str() +
-               "'(this compiler supports " + utostr(SupportedVers.Major) + "." +
-               utostr(SupportedVers.Minor) + ")";
-      return createStringError(errc::invalid_argument, Error);
+    for (auto Version : ExperimentalExtension) {
+      if (Major == Version.Major && Minor == Version.Minor)
+        return Error::success();
     }
-    return Error::success();
+
+    if (!ExperimentalExtensionVersionCheck)
+      return Error::success();
+
+    std::string Error = "unsupported version number " + MajorStr.str();
+    if (!MinorStr.empty())
+      Error += "." + MinorStr.str();
+    Error += " for experimental extension '" + Ext.str() +
+             "'(this compiler supports ";
+
+    ListSeparator LS;
+    for (auto Version : ExperimentalExtension) {
+      Error += LS;
+      Error += (utostr(Version.Major) + "." + utostr(Version.Minor));
+    }
+    Error += ")";
+    return createStringError(errc::invalid_argument, Error);
   }
 
   // Exception rule for `g`, we don't have clear version scheme for that on
@@ -427,28 +477,18 @@ RISCVISAInfo::parseFeatures(unsigned XLen, bool IsI2p1,
 
   for (auto &Feature : Features) {
     StringRef ExtName = Feature;
-    bool Experimental = false;
     assert(ExtName.size() > 1 && (ExtName[0] == '+' || ExtName[0] == '-'));
     bool Add = ExtName[0] == '+';
     ExtName = ExtName.drop_front(1); // Drop '+' or '-'
-    Experimental = stripExperimentalPrefix(ExtName);
-    auto ExtensionInfos = Experimental
-                              ? makeArrayRef(SupportedExperimentalExtensions)
-                              : makeArrayRef(SupportedExtensions);
-    auto ExtensionInfoIterator =
-        llvm::find_if(ExtensionInfos, FindByName(ExtName));
-
-    // Not all features is related to ISA extension, like `relax` or
-    // `save-restore`, skip those feature.
-    if (ExtensionInfoIterator == ExtensionInfos.end())
+    auto Info = isSupportedExtensionFeature(ExtName);
+    if (!Info)
       continue;
 
     if (Add)
-      ISAInfo->addExtension(ExtName,
-                            ExtensionInfoIterator->Versions.front().Major,
-                            ExtensionInfoIterator->Versions.front().Minor);
+      ISAInfo->addExtension(Info->ExtName, Info->Version.Major,
+                            Info->Version.Minor);
     else
-      ISAInfo->Exts.erase(ExtName.str());
+      ISAInfo->Exts.erase(Info->ExtName);
   }
 
   if (IsI2p1)
@@ -465,7 +505,8 @@ RISCVISAInfo::parseFeatures(unsigned XLen, bool IsI2p1,
 
 llvm::Expected<std::unique_ptr<RISCVISAInfo>>
 RISCVISAInfo::parseArchString(StringRef Arch, bool EnableExperimentalExtension,
-                              bool ExperimentalExtensionVersionCheck) {
+                              bool ExperimentalExtensionVersionCheck,
+                              bool IgnoreUnknownExtension) {
   // RISC-V ISA strings must be lowercase.
   if (llvm::any_of(Arch, isupper)) {
     return createStringError(errc::invalid_argument,
@@ -570,8 +611,10 @@ RISCVISAInfo::parseArchString(StringRef Arch, bool EnableExperimentalExtension,
             C);
       }
 
-      return createStringError(errc::invalid_argument,
-                               "invalid standard user-level extension '%c'", C);
+      if (!IgnoreUnknownExtension)
+        return createStringError(errc::invalid_argument,
+                                 "invalid standard user-level extension '%c'",
+                                 C);
     }
 
     // Move to next char to prevent repeated letter.
@@ -583,19 +626,23 @@ RISCVISAInfo::parseArchString(StringRef Arch, bool EnableExperimentalExtension,
       Next = std::string(std::next(I), E);
     if (auto E = getExtensionVersion(std::string(1, C), Next, Major, Minor,
                                      ConsumeLength, EnableExperimentalExtension,
-                                     ExperimentalExtensionVersionCheck))
-      return std::move(E);
+                                     ExperimentalExtensionVersionCheck)) {
+      if (IgnoreUnknownExtension)
+        consumeError(std::move(E));
+      else
+        return std::move(E);
+    } else {
+      // The order is OK, then push it into features.
+      // TODO: Use version number when setting target features
+      // Currently LLVM supports only "mafdcbv".
+      StringRef SupportedStandardExtension = "mafdcbv";
+      if (SupportedStandardExtension.find(C) == StringRef::npos)
+        return createStringError(errc::invalid_argument,
+                                 "unsupported standard user-level extension '%c'",
+                                 C);
+      ISAInfo->addExtension(std::string(1, C), Major, Minor);
 
-    // The order is OK, then push it into features.
-    // TODO: Use version number when setting target features
-    // Currently LLVM supports only "mafdcbv".
-    StringRef SupportedStandardExtension = "mafdcbv";
-    if (SupportedStandardExtension.find(C) == StringRef::npos)
-      return createStringError(errc::invalid_argument,
-                               "unsupported standard user-level extension '%c'",
-                               C);
-    ISAInfo->addExtension(std::string(1, C), Major, Minor);
-
+    }
     // Consume full extension name and version, including any optional '_'
     // between this extension and the next
     ++I;
@@ -753,13 +800,13 @@ std::string RISCVISAInfo::toString() const {
   raw_string_ostream Arch(Buffer);
 
   Arch << "rv" << XLen;
-
+f
   ListSeparator LS("_");
   for (auto &Ext : Exts) {
     StringRef ExtName = Ext.first;
     auto ExtInfo = Ext.second;
     Arch << LS << ExtName;
-    Arch << ExtInfo.MajorVersion << "p" << ExtInfo.MinorVersion;
+    Arch << ExtInfo.Version.Major << "p" << ExtInfo.Version.Minor;
   }
 
   return Arch.str();

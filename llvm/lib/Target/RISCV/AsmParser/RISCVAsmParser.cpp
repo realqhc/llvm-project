@@ -2154,7 +2154,7 @@ bool RISCVAsmParser::parseDirectiveAttribute() {
     auto &ISAInfo = *ParseResult;
 
     for (auto Feature : RISCVFeatureKV)
-      if (ISAInfo->hasExtension(Feature.Key))
+      if (ISAInfo->hasExtensionWithVersion(Feature.Key))
         setFeatureBits(Feature.Value, Feature.Key);
 
     if (ISAInfo->getIsI2p1())

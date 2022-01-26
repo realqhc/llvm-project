@@ -150,7 +150,7 @@ void RISCVTargetInfo::getTargetDefines(const LangOptions &Opts,
     auto ExtName = Extension.first;
     auto ExtInfo = Extension.second;
     unsigned Version =
-        (ExtInfo.MajorVersion * 1000000) + (ExtInfo.MinorVersion * 1000);
+        (ExtInfo.Version.Major * 1000000) + (ExtInfo.Version.Minor * 1000);
 
     Builder.defineMacro(Twine("__riscv_", ExtName), Twine(Version));
   }
@@ -223,10 +223,7 @@ bool RISCVTargetInfo::hasFeature(StringRef Feature) const {
   if (Result.hasValue())
     return Result.getValue();
 
-  if (ISAInfo->isSupportedExtensionFeature(Feature))
-    return ISAInfo->hasExtension(Feature);
-
-  return false;
+  return ISAInfo->hasExtensionWithVersion(Feature);
 }
 
 /// Perform initialization based on the user configured set of features.

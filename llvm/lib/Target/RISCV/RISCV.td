@@ -13,28 +13,28 @@ include "llvm/Target/Target.td"
 //===----------------------------------------------------------------------===//
 
 def FeatureStdExtM
-    : SubtargetFeature<"m", "HasStdExtM", "true",
+    : SubtargetFeature<"m", "StdExtM", "RISCVExtensionVersion{2, 0}",
                        "'M' (Integer Multiplication and Division)">;
 def HasStdExtM : Predicate<"Subtarget->hasStdExtM()">,
                            AssemblerPredicate<(all_of FeatureStdExtM),
                            "'M' (Integer Multiplication and Division)">;
 
 def FeatureStdExtA
-    : SubtargetFeature<"a", "HasStdExtA", "true",
+    : SubtargetFeature<"a", "StdExtA", "RISCVExtensionVersion{2, 0}",
                        "'A' (Atomic Instructions)">;
 def HasStdExtA : Predicate<"Subtarget->hasStdExtA()">,
                            AssemblerPredicate<(all_of FeatureStdExtA),
                            "'A' (Atomic Instructions)">;
 
 def FeatureStdExtF
-    : SubtargetFeature<"f", "HasStdExtF", "true",
+    : SubtargetFeature<"f", "StdExtF", "RISCVExtensionVersion{2, 0}",
                        "'F' (Single-Precision Floating-Point)">;
 def HasStdExtF : Predicate<"Subtarget->hasStdExtF()">,
                            AssemblerPredicate<(all_of FeatureStdExtF),
                            "'F' (Single-Precision Floating-Point)">;
 
 def FeatureStdExtD
-    : SubtargetFeature<"d", "HasStdExtD", "true",
+    : SubtargetFeature<"d", "StdExtD", "RISCVExtensionVersion{2, 0}",
                        "'D' (Double-Precision Floating-Point)",
                        [FeatureStdExtF]>;
 def HasStdExtD : Predicate<"Subtarget->hasStdExtD()">,
@@ -42,7 +42,7 @@ def HasStdExtD : Predicate<"Subtarget->hasStdExtD()">,
                            "'D' (Double-Precision Floating-Point)">;
 
 def FeatureStdExtZfhmin
-    : SubtargetFeature<"experimental-zfhmin", "HasStdExtZfhmin", "true",
+    : SubtargetFeature<"experimental-zfhmin", "StdExtZfhmin", "RISCVExtensionVersion{0, 1}",
                        "'Zfhmin' (Half-Precision Floating-Point Minimal)",
                        [FeatureStdExtF]>;
 def HasStdExtZfhmin : Predicate<"Subtarget->hasStdExtZfhmin()">,
@@ -50,7 +50,7 @@ def HasStdExtZfhmin : Predicate<"Subtarget->hasStdExtZfhmin()">,
                              "'Zfhmin' (Half-Precision Floating-Point Minimal)">;
 
 def FeatureStdExtZfh
-    : SubtargetFeature<"experimental-zfh", "HasStdExtZfh", "true",
+    : SubtargetFeature<"experimental-zfh", "StdExtZfh", "RISCVExtensionVersion{0, 1}",
                        "'Zfh' (Half-Precision Floating-Point)",
                        [FeatureStdExtZfhmin, FeatureStdExtF]>;
 def HasStdExtZfh : Predicate<"Subtarget->hasStdExtZfh()">,
@@ -58,14 +58,14 @@ def HasStdExtZfh : Predicate<"Subtarget->hasStdExtZfh()">,
                              "'Zfh' (Half-Precision Floating-Point)">;
 
 def FeatureStdExtC
-    : SubtargetFeature<"c", "HasStdExtC", "true",
+    : SubtargetFeature<"c", "StdExtC", "RISCVExtensionVersion{2, 0}",
                        "'C' (Compressed Instructions)">;
 def HasStdExtC : Predicate<"Subtarget->hasStdExtC()">,
                            AssemblerPredicate<(all_of FeatureStdExtC),
                            "'C' (Compressed Instructions)">;
 
 def FeatureStdExtZba
-    : SubtargetFeature<"experimental-zba", "HasStdExtZba", "true",
+    : SubtargetFeature<"experimental-zba", "StdExtZba", "RISCVExtensionVersion{1, 0}",
                        "'Zba' (Address calculation 'B' Instructions)">;
 def HasStdExtZba : Predicate<"Subtarget->hasStdExtZba()">,
                              AssemblerPredicate<(all_of FeatureStdExtZba),
@@ -73,63 +73,63 @@ def HasStdExtZba : Predicate<"Subtarget->hasStdExtZba()">,
 def NotHasStdExtZba : Predicate<"!Subtarget->hasStdExtZba()">;
 
 def FeatureStdExtZbb
-    : SubtargetFeature<"experimental-zbb", "HasStdExtZbb", "true",
+    : SubtargetFeature<"experimental-zbb", "StdExtZbb", "RISCVExtensionVersion{1, 0}",
                        "'Zbb' (Base 'B' Instructions)">;
 def HasStdExtZbb : Predicate<"Subtarget->hasStdExtZbb()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbb),
                              "'Zbb' (Base 'B' Instructions)">;
 
 def FeatureStdExtZbc
-    : SubtargetFeature<"experimental-zbc", "HasStdExtZbc", "true",
+    : SubtargetFeature<"experimental-zbc", "StdExtZbc", "RISCVExtensionVersion{1, 0}",
                        "'Zbc' (Carry-Less 'B' Instructions)">;
 def HasStdExtZbc : Predicate<"Subtarget->hasStdExtZbc()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbc),
                              "'Zbc' (Carry-Less 'B' Instructions)">;
 
 def FeatureStdExtZbe
-    : SubtargetFeature<"experimental-zbe", "HasStdExtZbe", "true",
+    : SubtargetFeature<"experimental-zbe", "StdExtZbe", "RISCVExtensionVersion{0, 93}",
                        "'Zbe' (Extract-Deposit 'B' Instructions)">;
 def HasStdExtZbe : Predicate<"Subtarget->hasStdExtZbe()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbe),
                              "'Zbe' (Extract-Deposit 'B' Instructions)">;
 
 def FeatureStdExtZbf
-    : SubtargetFeature<"experimental-zbf", "HasStdExtZbf", "true",
+    : SubtargetFeature<"experimental-zbf", "StdExtZbf", "RISCVExtensionVersion{0, 93}",
                        "'Zbf' (Bit-Field 'B' Instructions)">;
 def HasStdExtZbf : Predicate<"Subtarget->hasStdExtZbf()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbf),
                              "'Zbf' (Bit-Field 'B' Instructions)">;
 
 def FeatureStdExtZbm
-    : SubtargetFeature<"experimental-zbm", "HasStdExtZbm", "true",
+    : SubtargetFeature<"experimental-zbm", "StdExtZbm", "RISCVExtensionVersion{0, 93}",
                        "'Zbm' (Matrix 'B' Instructions)">;
 def HasStdExtZbm : Predicate<"Subtarget->hasStdExtZbm()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbm),
                              "'Zbm' (Matrix 'B' Instructions)">;
 
 def FeatureStdExtZbp
-    : SubtargetFeature<"experimental-zbp", "HasStdExtZbp", "true",
+    : SubtargetFeature<"experimental-zbp", "StdExtZbp", "RISCVExtensionVersion{0, 93}",
                        "'Zbp' (Permutation 'B' Instructions)">;
 def HasStdExtZbp : Predicate<"Subtarget->hasStdExtZbp()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbp),
                              "'Zbp' (Permutation 'B' Instructions)">;
 
 def FeatureStdExtZbr
-    : SubtargetFeature<"experimental-zbr", "HasStdExtZbr", "true",
+    : SubtargetFeature<"experimental-zbr", "StdExtZbr", "RISCVExtensionVersion{0, 93}",
                        "'Zbr' (Polynomial Reduction 'B' Instructions)">;
 def HasStdExtZbr : Predicate<"Subtarget->hasStdExtZbr()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbr),
                              "'Zbr' (Polynomial Reduction 'B' Instructions)">;
 
 def FeatureStdExtZbs
-    : SubtargetFeature<"experimental-zbs", "HasStdExtZbs", "true",
+    : SubtargetFeature<"experimental-zbs", "StdExtZbs", "RISCVExtensionVersion{1, 0}",
                        "'Zbs' (Single-Bit 'B' Instructions)">;
 def HasStdExtZbs : Predicate<"Subtarget->hasStdExtZbs()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbs),
                              "'Zbs' (Single-Bit 'B' Instructions)">;
 
 def FeatureStdExtZbt
-    : SubtargetFeature<"experimental-zbt", "HasStdExtZbt", "true",
+    : SubtargetFeature<"experimental-zbt", "StdExtZbt", "RISCVExtensionVersion{0, 93}",
                        "'Zbt' (Ternary 'B' Instructions)">;
 def HasStdExtZbt : Predicate<"Subtarget->hasStdExtZbt()">,
                              AssemblerPredicate<(all_of FeatureStdExtZbt),
@@ -151,7 +151,7 @@ def HasRVCHints : Predicate<"Subtarget->enableRVCHintInstrs()">,
                                       "RVC Hint Instructions">;
 
 def FeatureStdExtV
-    : SubtargetFeature<"experimental-v", "HasStdExtV", "true",
+    : SubtargetFeature<"experimental-v", "StdExtV", "RISCVExtensionVersion{0, 10}",
                        "'V' (Vector Instructions)">;
 def HasStdExtV : Predicate<"Subtarget->hasStdExtV()">,
                            AssemblerPredicate<(all_of FeatureStdExtV),
@@ -161,7 +161,7 @@ def HasVInstructions    : Predicate<"Subtarget->hasVInstructions()">;
 def HasVInstructionsAnyF : Predicate<"Subtarget->hasVInstructionsAnyF()">;
 
 def FeatureStdExtZvlsseg
-    : SubtargetFeature<"experimental-zvlsseg", "HasStdExtZvlsseg", "true",
+    : SubtargetFeature<"experimental-zvlsseg", "StdExtZvlsseg", "RISCVExtensionVersion{0, 10}",
                        "'Zvlsseg' (Vector segment load/store instructions)",
                        [FeatureStdExtV]>;
 def HasStdExtZvlsseg : Predicate<"Subtarget->hasStdExtZvlsseg()">,
@@ -169,7 +169,7 @@ def HasStdExtZvlsseg : Predicate<"Subtarget->hasStdExtZvlsseg()">,
                                  "'Zvlsseg' (Vector segment load/store instructions)">;
 
 def FeatureStdExtZvamo
-    : SubtargetFeature<"experimental-zvamo", "HasStdExtZvamo", "true",
+    : SubtargetFeature<"experimental-zvamo", "StdExtZvamo", "RISCVExtensionVersion{0, 10}",
                        "'Zvamo' (Vector AMO Operations)",
                        [FeatureStdExtV]>;
 def HasStdExtZvamo : Predicate<"Subtarget->hasStdExtZvamo()">,
@@ -180,14 +180,14 @@ def FeatureI2p1
     : SubtargetFeature<"i2p1", "IsI2p1", "true", "Implements I 2.1">;
 
 def FeatureStdExtZicsr
-    : SubtargetFeature<"zicsr", "HasStdExtZicsr", "true",
+    : SubtargetFeature<"zicsr", "StdExtZicsr", "RISCVExtensionVersion{0, 10}",
                        "'Zicsr' (Control and Status Register)">;
 def HasStdExtZicsr : Predicate<"Subtarget->hasStdExtZicsr()">,
                                AssemblerPredicate<(all_of FeatureStdExtZicsr),
                                "'Zicsr' (Control and Status Register)">;
 
 def FeatureStdExtZifencei
-    : SubtargetFeature<"zifencei", "HasStdExtZifencei", "true",
+    : SubtargetFeature<"zifencei", "StdExtZifencei", "RISCVExtensionVersion{0, 10}",
                        "'Zifencei' (Instruction-Fetch Fence)">;
 def HasStdExtZifencei : Predicate<"Subtarget->hasStdExtZifencei()">,
                                   AssemblerPredicate<(all_of FeatureStdExtZifencei),
@@ -209,7 +209,7 @@ defvar RV32 = DefaultMode;
 def RV64           : HwMode<"+64bit">;
 
 def FeatureRV32E
-    : SubtargetFeature<"e", "IsRV32E", "true",
+    : SubtargetFeature<"e", "StdExtE", "RISCVExtensionVersion{1, 9}",
                        "Implements RV32E (provides 16 rather than 32 GPRs)">;
 def IsRV32E : Predicate<"Subtarget->isRV32E()">,
                         AssemblerPredicate<(all_of FeatureRV32E)>;

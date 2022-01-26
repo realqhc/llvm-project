@@ -19,10 +19,33 @@
 #include <vector>
 
 namespace llvm {
+
+/// Represents the major and version number components of a RISC-V extension
+struct RISCVExtensionVersion {
+  unsigned Major;
+  unsigned Minor;
+
+  RISCVExtensionVersion() : Major(0), Minor(0) {}
+  RISCVExtensionVersion(unsigned Maj, unsigned Min) : Major(Maj), Minor(Min) {}
+
+  bool operator==(const RISCVExtensionVersion &Version) const {
+    return Major == Version.Major && Minor == Version.Minor;
+  }
+  bool operator!=(const RISCVExtensionVersion &Version) const {
+    return !(*this == Version);
+  }
+
+  bool operator<(const RISCVExtensionVersion &Version) const {
+    return (Major < Version.Major) ||
+           (Major == Version.Major && Minor < Version.Minor);
+  }
+
+  operator bool() const { return Major != 0 || Minor != 0; }
+};
+
 struct RISCVExtensionInfo {
   std::string ExtName;
-  unsigned MajorVersion;
-  unsigned MinorVersion;
+  RISCVExtensionVersion Version;
 };
 
 class RISCVISAInfo {
@@ -47,7 +70,8 @@ public:
   /// Parse RISCV ISA info from arch string.
   static llvm::Expected<std::unique_ptr<RISCVISAInfo>>
   parseArchString(StringRef Arch, bool EnableExperimentalExtension,
-                  bool ExperimentalExtensionVersionCheck = true);
+                  bool ExperimentalExtensionVersionCheck = true,
+                  bool IgnoreUnknownExtension = false);
 
   /// Parse RISCV ISA info from feature vector.
   static llvm::Expected<std::unique_ptr<RISCVISAInfo>>
@@ -55,8 +79,7 @@ public:
                 const std::vector<std::string> &Features);
 
   /// Convert RISCV ISA info to a feature vector.
-  void toFeatures(std::vector<StringRef> &Features,
-                  std::function<StringRef(const Twine &)> StrAlloc) const;
+  void toFeatures(std::vector<std::string> &Features) const;
 
   const OrderedExtensionMap &getExtensions() const { return Exts; };
 
@@ -65,9 +88,11 @@ public:
   bool getIsI2p1() const { return IsI2p1; };
 
   bool hasExtension(StringRef Ext) const;
+  bool hasExtensionWithVersion(StringRef Ext) const;
   std::string toString() const;
 
-  static bool isSupportedExtensionFeature(StringRef Ext);
+  static Optional<RISCVExtensionInfo>
+  isSupportedExtensionFeature(StringRef Ext);
   static bool isSupportedExtension(StringRef Ext);
   static bool isSupportedExtension(StringRef Ext, unsigned MajorVersion,
                                    unsigned MinorVersion);

@@ -41,8 +41,11 @@ static bool getArchFeatures(const Driver &D, StringRef Arch,
     return false;
   }
 
-  (*ISAInfo)->toFeatures(
-      Features, [&Args](const Twine &Str) { return Args.MakeArgString(Str); });
+  std::vector<std::string> ToFeatures;
+  (*ISAInfo)->toFeatures(ToFeatures);
+
+  for (const auto &Feature : ToFeatures)
+    Features.push_back(Args.MakeArgString("+" + Feature));
   return true;
 }
 

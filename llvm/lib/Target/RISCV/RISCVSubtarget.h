@@ -24,6 +24,7 @@
 #include "llvm/CodeGen/SelectionDAGTargetInfo.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
 #include "llvm/IR/DataLayout.h"
+#include "llvm/Support/RISCVISAInfo.h"
 #include "llvm/Target/TargetMachine.h"
 
 #define GET_SUBTARGETINFO_HEADER
@@ -34,31 +35,31 @@ class StringRef;
 
 class RISCVSubtarget : public RISCVGenSubtargetInfo {
   virtual void anchor();
-  bool HasStdExtM = false;
-  bool HasStdExtA = false;
-  bool HasStdExtF = false;
-  bool HasStdExtD = false;
-  bool HasStdExtC = false;
-  bool HasStdExtZba = false;
-  bool HasStdExtZbb = false;
-  bool HasStdExtZbc = false;
-  bool HasStdExtZbe = false;
-  bool HasStdExtZbf = false;
-  bool HasStdExtZbm = false;
-  bool HasStdExtZbp = false;
-  bool HasStdExtZbr = false;
-  bool HasStdExtZbs = false;
-  bool HasStdExtZbt = false;
-  bool HasStdExtV = false;
-  bool HasStdExtZvlsseg = false;
-  bool HasStdExtZvamo = false;
+  RISCVExtensionVersion StdExtM;
+  RISCVExtensionVersion StdExtA;
+  RISCVExtensionVersion StdExtF;
+  RISCVExtensionVersion StdExtD;
+  RISCVExtensionVersion StdExtC;
+  RISCVExtensionVersion StdExtE;
+  RISCVExtensionVersion StdExtZba;
+  RISCVExtensionVersion StdExtZbb;
+  RISCVExtensionVersion StdExtZbc;
+  RISCVExtensionVersion StdExtZbe;
+  RISCVExtensionVersion StdExtZbf;
+  RISCVExtensionVersion StdExtZbm;
+  RISCVExtensionVersion StdExtZbp;
+  RISCVExtensionVersion StdExtZbr;
+  RISCVExtensionVersion StdExtZbs;
+  RISCVExtensionVersion StdExtZbt;
+  RISCVExtensionVersion StdExtZvlsseg;
+  RISCVExtensionVersion StdExtZvamo;
+  RISCVExtensionVersion StdExtZicsr;
+  RISCVExtensionVersion StdExtZifencei;
+  RISCVExtensionVersion StdExtZfhmin;
+  RISCVExtensionVersion StdExtZfh;
+  RISCVExtensionVersion StdExtV;
   bool IsI2p1 = false;
-  bool HasStdExtZicsr = false;
-  bool HasStdExtZifencei = false;
-  bool HasStdExtZfhmin = false;
-  bool HasStdExtZfh = false;
   bool HasRV64 = false;
-  bool IsRV32E = false;
   bool EnableLinkerRelax = false;
   bool EnableRVCHintInstrs = true;
   bool EnableSaveRestore = false;
@@ -104,30 +105,30 @@ public:
     return &TSInfo;
   }
   bool enableMachineScheduler() const override { return true; }
-  bool hasStdExtM() const { return HasStdExtM; }
-  bool hasStdExtA() const { return HasStdExtA; }
-  bool hasStdExtF() const { return HasStdExtF; }
-  bool hasStdExtD() const { return HasStdExtD; }
-  bool hasStdExtC() const { return HasStdExtC; }
-  bool hasStdExtZba() const { return HasStdExtZba; }
-  bool hasStdExtZbb() const { return HasStdExtZbb; }
-  bool hasStdExtZbc() const { return HasStdExtZbc; }
-  bool hasStdExtZbe() const { return HasStdExtZbe; }
-  bool hasStdExtZbf() const { return HasStdExtZbf; }
-  bool hasStdExtZbm() const { return HasStdExtZbm; }
-  bool hasStdExtZbp() const { return HasStdExtZbp; }
-  bool hasStdExtZbr() const { return HasStdExtZbr; }
-  bool hasStdExtZbs() const { return HasStdExtZbs; }
-  bool hasStdExtZbt() const { return HasStdExtZbt; }
-  bool hasStdExtV() const { return HasStdExtV; }
-  bool hasStdExtZvlsseg() const { return HasStdExtZvlsseg; }
-  bool hasStdExtZvamo() const { return HasStdExtZvamo; }
-  bool hasStdExtZicsr() const { return HasStdExtZicsr; }
-  bool hasStdExtZifencei() const { return HasStdExtZifencei; }
-  bool hasStdExtZfhmin() const { return HasStdExtZfhmin; }
-  bool hasStdExtZfh() const { return HasStdExtZfh; }
+  bool hasStdExtM() const { return StdExtM; }
+  bool hasStdExtA() const { return  StdExtA; }
+  bool hasStdExtF() const { return  StdExtF; }
+  bool hasStdExtD() const { return  StdExtD; }
+  bool hasStdExtC() const { return StdExtC; }
+  bool hasStdExtZba() const { return StdExtZba; }
+  bool hasStdExtZbb() const { return StdExtZbb; }
+  bool hasStdExtZbc() const { return StdExtZbc; }
+  bool hasStdExtZbe() const { return StdExtZbe; }
+  bool hasStdExtZbf() const { return StdExtZbf; }
+  bool hasStdExtZbm() const { return StdExtZbm; }
+  bool hasStdExtZbp() const { return StdExtZbp; }
+  bool hasStdExtZbr() const { return StdExtZbr; }
+  bool hasStdExtZbs() const { return StdExtZbs; }
+  bool hasStdExtZbt() const { return StdExtZbt; }
+  bool hasStdExtV() const { return StdExtV; }
+  bool hasStdExtZvlsseg() const { return StdExtZvlsseg; }
+  bool hasStdExtZvamo() const { return StdExtZvamo; }
+  bool hasStdExtZicsr() const { return StdExtZicsr; }
+  bool hasStdExtZifencei() const { return StdExtZifencei; }
+  bool hasStdExtZfhmin() const { return StdExtZfhmin; }
+  bool hasStdExtZfh() const { return StdExtZfh; }
   bool is64Bit() const { return HasRV64; }
-  bool isRV32E() const { return IsRV32E; }
+  bool isRV32E() const { return StdExtE; }
   bool enableLinkerRelax() const { return EnableLinkerRelax; }
   bool enableRVCHintInstrs() const { return EnableRVCHintInstrs; }
   bool enableSaveRestore() const { return EnableSaveRestore; }
@@ -140,11 +141,11 @@ public:
   }
 
   // Vector codegen related methods.
-  bool hasVInstructions() const { return HasStdExtV; }
-  bool hasVInstructionsI64() const { return HasStdExtV; }
-  bool hasVInstructionsF16() const { return HasStdExtV && hasStdExtZfh(); }
-  bool hasVInstructionsF32() const { return HasStdExtV && hasStdExtF(); }
-  bool hasVInstructionsF64() const { return HasStdExtV && hasStdExtD(); }
+  bool hasVInstructions() const { return StdExtV; }
+  bool hasVInstructionsI64() const { return StdExtV; }
+  bool hasVInstructionsF16() const { return StdExtV && hasStdExtZfh(); }
+  bool hasVInstructionsF32() const { return StdExtV && hasStdExtF(); }
+  bool hasVInstructionsF64() const { return StdExtV && hasStdExtD(); }
   // F16 and F64 both require F32.
   bool hasVInstructionsAnyF() const { return hasVInstructionsF32(); }
   unsigned getMaxInterleaveFactor() const {
@@ -152,10 +153,10 @@ public:
   }
 
   bool HasI2p0OrZicsr() {
-    return (IsI2p1 && HasStdExtZicsr) || (!IsI2p1 && !HasStdExtZicsr);
+    return (IsI2p1 && StdExtZicsr) || (!IsI2p1 && !StdExtZicsr);
   }
   bool HasI2p0OrZifencei() {
-    return (IsI2p1 && HasStdExtZifencei) || (!IsI2p1 && !HasStdExtZifencei);
+    return (IsI2p1 && StdExtZifencei) || (!IsI2p1 && !StdExtZifencei);
   }
 
 protected:

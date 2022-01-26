@@ -26,6 +26,7 @@
 #include "llvm/Support/MathExtras.h"
 #include "llvm/Support/RISCVAttributeParser.h"
 #include "llvm/Support/RISCVAttributes.h"
+#include "llvm/Support/RISCVISAInfo.h"
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
@@ -309,36 +310,29 @@ SubtargetFeatures ELFObjectFileBase::getRISCVFeatures() const {
     // The Arch pattern is [rv32|rv64][i|e]version(_[m|a|f|d|c]version)*
     // Version string pattern is (major)p(minor). Major and minor are optional.
     // For example, a version number could be 2p0, 2, or p92.
-    StringRef Arch = Attr.getValue();
-    if (Arch.consume_front("rv32"))
+    auto ParseResult =
+        llvm::RISCVISAInfo::parseArchString(Attr.getValue(), true, true, true);
+    if (!ParseResult)
+      return Features;
+
+    auto &ISAInfo = *ParseResult;
+
+    if (ISAInfo->getXLen() == 32)
       Features.AddFeature("64bit", false);
-    else if (Arch.consume_front("rv64"))
+    else if (ISAInfo->getXLen() == 64)
       Features.AddFeature("64bit");
 
-    while (!Arch.empty()) {
-      switch (Arch[0]) {
-      default:
-        break; // Ignore unexpected features.
-      case 'i':
-        Features.AddFeature("e", false);
-        break;
-      case 'd':
-        Features.AddFeature("f"); // D-ext will imply F-ext.
-        LLVM_FALLTHROUGH;
-      case 'e':
-      case 'm':
-      case 'a':
-      case 'f':
-      case 'c':
-        Features.AddFeature(Arch.take_front());
-        break;
-      }
-
-      // FIXME: Handle version numbers.
-      Arch = Arch.drop_until([](char c) { return c == '_' || c == '\0'; });
-      Arch = Arch.drop_while([](char c) { return c == '_'; });
+    if (PlatformFlags & ELF::EF_RISCV_RVC) {
+      Features.AddFeature("c", false);
     }
+
+    std::vector<std::string> ToFeatures;
+    ISAInfo->toFeatures(ToFeatures);
+
+    for (const auto &Feature : ToFeatures)
+      Features.AddFeature(Feature);
   }
+
 
   return Features;
 }
