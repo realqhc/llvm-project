@@ -206,17 +206,6 @@
 // CHECK-V-EXT: __riscv_zvlsseg 10000
 
 // RUN: %clang -target riscv32-unknown-linux-gnu -menable-experimental-extensions \
-// RUN: -march=rv32izvamo0p10 -x c -E -dM %s \
-// RUN: -o - | FileCheck --check-prefix=CHECK-ZVAMO-EXT %s
-// RUN: %clang -target riscv64-unknown-linux-gnu -menable-experimental-extensions \
-// RUN: -march=rv32izvamo0p10 -x c -E -dM %s \
-// RUN: -o - | FileCheck --check-prefix=CHECK-ZVAMO-EXT %s
-// CHECK-ZVAMO-EXT: __riscv_v 10000
-// CHECK-ZVAMO-EXT: __riscv_vector 1
-// CHECK-ZVAMO-EXT: __riscv_zvamo 10000
-// CHECK-ZVAMO-EXT: __riscv_zvlsseg 10000
-
-// RUN: %clang -target riscv32-unknown-linux-gnu -menable-experimental-extensions \
 // RUN: -march=rv32izfh0p1 -x c -E -dM %s \
 // RUN: -o - | FileCheck --check-prefix=CHECK-ZFH-EXT %s
 // RUN: %clang -target riscv64-unknown-linux-gnu -menable-experimental-extensions \
