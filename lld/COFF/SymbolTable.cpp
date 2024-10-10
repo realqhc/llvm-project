@@ -479,10 +479,11 @@ void SymbolTable::reportUnresolvable() {
                        /* localImports */ nullptr, true);
 }
 
-void SymbolTable::resolveRemainingUndefines() {
+bool SymbolTable::resolveRemainingUndefines() {
   llvm::TimeTraceScope timeScope("Resolve remaining undefined symbols");
   SmallPtrSet<Symbol *, 8> undefs;
   DenseMap<Symbol *, Symbol *> localImports;
+  bool foundLazy = false;
 
   for (auto &i : symMap) {
     Symbol *sym = i.second;
@@ -509,6 +510,11 @@ void SymbolTable::resolveRemainingUndefines() {
         if (undef) {
           undef->resolveWeakAlias();
         }
+      }
+      if (imp && imp->isLazy()) {
+        forceLazy(imp);
+        foundLazy = true;
+        continue;
       }
       if (imp && isa<Defined>(imp)) {
         auto *d = cast<Defined>(imp);
@@ -537,6 +543,7 @@ void SymbolTable::resolveRemainingUndefines() {
   reportProblemSymbols(
       ctx, undefs,
       ctx.config.warnLocallyDefinedImported ? &localImports : nullptr, false);
+  return foundLazy;
 }
 
 std::pair<Symbol *, bool> SymbolTable::insert(StringRef name) {
@@ -823,13 +830,13 @@ DefinedImportData *SymbolTable::addImportData(StringRef n, ImportFile *f,
   return nullptr;
 }
 
-Symbol *SymbolTable::addImportThunk(StringRef name, DefinedImportData *id,
-                                    ImportThunkChunk *chunk) {
+Defined *SymbolTable::addImportThunk(StringRef name, DefinedImportData *id,
+                                     ImportThunkChunk *chunk) {
   auto [s, wasInserted] = insert(name, nullptr);
   s->isUsedInRegularObj = true;
   if (wasInserted || isa<Undefined>(s) || s->isLazy()) {
     replaceSymbol<DefinedImportThunk>(s, ctx, name, id, chunk);
-    return s;
+    return cast<Defined>(s);
   }
 
   reportDuplicate(s, id->file);
