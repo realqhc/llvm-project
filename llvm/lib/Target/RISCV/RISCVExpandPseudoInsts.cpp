@@ -419,8 +419,8 @@ bool RISCVExpandPseudo::expandRV32ZdinxLoad(MachineBasicBlock &MBB,
   return true;
 }
 
-bool RISCVExpandPseudo::expandCoreVShuffle(MachineBasicBlock &MBB,
-                                           MachineBasicBlock::iterator MBBI) {
+bool RISCVExpandPseudo::expandCoreVShuffle(
+  MachineBasicBlock &MBB, MachineBasicBlock::iterator MBBI) {
   DebugLoc DL = MBBI->getDebugLoc();
   Register DstReg = MBBI->getOperand(0).getReg();
   Register SrcReg = MBBI->getOperand(1).getReg();
