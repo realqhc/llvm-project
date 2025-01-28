@@ -120,6 +120,12 @@ Changes to building LLVM
 ------------------------
 
 * Raised the minimum MSVC version to Visual Studio 2019 16.8.
+* Deprecated support for building compiler-rt with `LLVM_ENABLE_PROJECTS`.
+  Users should instead use `LLVM_ENABLE_RUNTIMES`, either through the
+  runtimes or the bootstrapping build.
+* Deprecated support for building libc with `LLVM_ENABLE_PROJECTS`.
+  Users should instead use `LLVM_ENABLE_RUNTIMES`, either through the
+  runtimes or the bootstrapping build.
 
 Changes to TableGen
 -------------------
@@ -272,6 +278,9 @@ Changes to the RISC-V Backend
   * `cf` constraint meaning an RVC-encoding compatible FPR (`f8`-`f15`)
   * `R` constraint meaning an even-odd GPR pair (prints as the even register,
     but both registers in the pair are considered live).
+  * `cR` constraint meaning an RVC-encoding compatible even-odd GPR Pair (prints
+    as an even register between `x8` and `x14`, but both registers in the pair
+    are considered live).
   * `N` modifer meaning print the register encoding (0-31) rather than the name.
 * `f` and `cf` inline assembly constraints, when using F-/D-/H-in-X extensions,
   will use the relevant GPR rather than FPR. This makes inline assembly portable
