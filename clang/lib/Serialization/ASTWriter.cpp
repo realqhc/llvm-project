@@ -5242,13 +5242,13 @@ void ASTWriter::AddToken(const Token &Tok, RecordDataImpl &Record) {
 
 void ASTWriter::AddString(StringRef Str, RecordDataImpl &Record) {
   Record.push_back(Str.size());
-  Record.insert(Record.end(), Str.begin(), Str.end());
+  llvm::append_range(Record, Str);
 }
 
 void ASTWriter::AddStringBlob(StringRef Str, RecordDataImpl &Record,
                               SmallVectorImpl<char> &Blob) {
   Record.push_back(Str.size());
-  Blob.insert(Blob.end(), Str.begin(), Str.end());
+  llvm::append_range(Blob, Str);
 }
 
 bool ASTWriter::PreparePathForOutput(SmallVectorImpl<char> &Path) {
@@ -5670,14 +5670,16 @@ void ASTWriter::PrepareWritingSpecialDecls(Sema &SemaRef) {
     llvm::SmallVector<const IdentifierInfo*, 256> IIs;
     for (const auto &ID : SemaRef.PP.getIdentifierTable()) {
       const IdentifierInfo *II = ID.second;
-      if (!Chain || !II->isFromAST() || II->hasChangedSinceDeserialization())
+      if (!Chain || !II->isFromAST() || II->hasChangedSinceDeserialization() ||
+          II->hasFETokenInfoChangedSinceDeserialization())
         IIs.push_back(II);
     }
     // Sort the identifiers to visit based on their name.
     llvm::sort(IIs, llvm::deref<std::less<>>());
+    const LangOptions &LangOpts = getLangOpts();
     for (const IdentifierInfo *II : IIs)
-      for (const Decl *D : SemaRef.IdResolver.decls(II))
-        GetDeclRef(D);
+      for (NamedDecl *D : SemaRef.IdResolver.decls(II))
+        GetDeclRef(getDeclForLocalLookup(LangOpts, D));
   }
 
   // Write all of the DeclsToCheckForDeferredDiags.
@@ -8780,10 +8782,10 @@ void ASTRecordWriter::writeOpenACCClause(const OpenACCClause *C) {
     writeSourceLocation(DTC->getLParenLoc());
     writeUInt32(DTC->getArchitectures().size());
     for (const DeviceTypeArgument &Arg : DTC->getArchitectures()) {
-      writeBool(Arg.first);
-      if (Arg.first)
-        AddIdentifierRef(Arg.first);
-      writeSourceLocation(Arg.second);
+      writeBool(Arg.getIdentifierInfo());
+      if (Arg.getIdentifierInfo())
+        AddIdentifierRef(Arg.getIdentifierInfo());
+      writeSourceLocation(Arg.getLoc());
     }
     return;
   }
@@ -8869,6 +8871,7 @@ void ASTRecordWriter::writeOpenACCClause(const OpenACCClause *C) {
     return;
   }
   case OpenACCClauseKind::Invalid:
+  case OpenACCClauseKind::Shortloop:
     llvm_unreachable("Clause serialization not yet implemented");
   }
   llvm_unreachable("Invalid Clause Kind");
