@@ -77,3 +77,30 @@ plui.h gp, 32
 # CHECK-ASM: plui.h gp, 612
 # CHECK-ASM: encoding: [0x9b,0xa1,0x64,0xf0]
 plui.h gp, 612
+# CHECK-ASM-AND-OBJ: psll.hs a0, a1, a2
+# CHECK-ASM: encoding: [0x1b,0xa5,0xc5,0x88]
+psll.hs a0, a1, a2
+# CHECK-ASM-AND-OBJ: psll.bs a3, a4, a5
+# CHECK-ASM: encoding: [0x9b,0x26,0xf7,0x8c]
+psll.bs a3, a4, a5
+# CHECK-ASM-AND-OBJ: padd.hs t0, t1, t2
+# CHECK-ASM: encoding: [0x9b,0x22,0x73,0x98]
+padd.hs t0, t1, t2
+# CHECK-ASM-AND-OBJ: padd.bs ra, a1, a2
+# CHECK-ASM: encoding: [0x9b,0xa0,0xc5,0x9c]
+padd.bs ra, a1, a2
+# CHECK-ASM-AND-OBJ: pssha.hs a3, a4, a5
+# CHECK-ASM: encoding: [0x9b,0x26,0xf7,0xe8]
+pssha.hs a3, a4, a5
+# CHECK-ASM-AND-OBJ: ssha gp, a4, a5
+# CHECK-ASM: encoding: [0x9b,0x21,0xf7,0xea]
+ssha gp, a4, a5
+# CHECK-ASM-AND-OBJ: psshar.hs a6, a7, a0
+# CHECK-ASM: encoding: [0x1b,0xa8,0xa8,0xf8]
+psshar.hs a6, a7, a0
+# CHECK-ASM-AND-OBJ: sshar t1, a7, a0
+# CHECK-ASM: encoding: [0x1b,0xa3,0xa8,0xfa]
+sshar t1, a7, a0
+# CHECK-ASM-AND-OBJ: psrli.b a1, 8
+# CHECK-ASM: encoding: [0x9b,0x45,0x86,0x80]
+psrli.b a3,1

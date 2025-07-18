@@ -19,6 +19,10 @@
 //===----------------------------------------------------------------------===//
 
 def simm10 : RISCVSImmLeafOp<10>;
+def uimm3_ext7 : RISCVUImmLeafOp<3> {
+ let EncoderMethod = "getImmOpValuePrependOne<3>";
+ let OperandType = "OPERAND_UIMM3_EXT7";
+}
 
 // A 10-bit signed immediate allowing range [-512, 1023]
 // but will decode to [-512, 511].
@@ -108,6 +112,41 @@ class RVPUnaryWUF<bits<2> w, bits<5> uf, string opcodestr>
   let Inst{24-20} = uf;
 }
 
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
+class RVPUnaryF<bit bfr, bits<3> f, bit aft, DAGOperand TyWUImm, string opcodestr,
+                bits<3> funct3>
+    : RVInstIBase<funct3, OPC_OP_IMM_32, (outs GPR:$rd),
+     (ins GPR:$rs1, TyWUImm:$wuimm), opcodestr, "$rd, $rs1, $wuimm">  {
+  bits<7>  wuimm;
+
+  let Inst{31}    = bfr;
+  let Inst{30-28} = f;
+  let Inst{27}    = aft;
+  let Inst{26-20} = wuimm;
+}
+
+class RVPUnary1F0<bits<3> f, DAGOperand TyWUImm, string opcodestr>
+    : RVPUnaryF<1, f, 0, TyWUImm, opcodestr, 0b100>;
+
+let hasSideEffects = 0, mayLoad = 0, mayStore = 0 in
+class RVPBinaryFW<bit bfr, bits<3> f, bit aft, bits<2> w, bits<3> funct3,
+                  string opcodestr, RISCVOpcode Opcode = OPC_OP_32,
+                  dag outs = (outs GPR:$rd), dag ins = (ins GPR:$rs1, GPR:$rs2),
+                  string argstr = "$rd, $rs1, $rs2">
+    : RVInstRBase<funct3, Opcode, outs, ins, opcodestr, argstr>  {
+  let Inst{31}    = bfr;
+  let Inst{30-28} = f;
+  let Inst{27}    = aft;
+  let Inst{26-25} = w;
+}
+
+class RVPBinary1F1W<bits<3> f, bits<2> w, bits<3> funct3, string opcodestr,
+                    RISCVOpcode Opcode = OPC_OP_IMM_32>
+    : RVPBinaryFW<1, f, 1, w, funct3, opcodestr, Opcode>;
+
+
+
+
 //===----------------------------------------------------------------------===//
 // Instructions
 //===----------------------------------------------------------------------===//
@@ -161,3 +200,30 @@ let Predicates = [HasStdExtP] in
 def PLUI_H : RVPUnaryImm10<0b1111000, "plui.h", simm10_unsigned>;
 let Predicates = [HasStdExtP, IsRV64] in
 def PLUI_W : RVPUnaryImm10<0b1111001, "plui.w", simm10_unsigned>;
+
+let Predicates = [HasStdExtP] in {
+def PSLL_HS   : RVPBinary1F1W<0b000, 0b00, 0b010, "psll.hs">;
+def PSLL_BS   : RVPBinary1F1W<0b000, 0b10, 0b010, "psll.bs">;
+def PADD_HS   : RVPBinary1F1W<0b001, 0b00, 0b010, "padd.hs">;
+def PADD_BS   : RVPBinary1F1W<0b001, 0b10, 0b010, "padd.bs">;
+def PSSHA_HS  : RVPBinary1F1W<0b110, 0b00, 0b010, "pssha.hs">;
+def PSSHAR_HS : RVPBinary1F1W<0b111, 0b00, 0b010, "psshar.hs">;
+} // Predicates = [HasStdExtP]
+let DecoderNamespace = "RV32Only",
+    Predicates = [HasStdExtP, IsRV32] in {
+def SSHA        : RVPBinary1F1W<0b110, 0b01, 0b010, "ssha">;
+def SSHAR       : RVPBinary1F1W<0b111, 0b01, 0b010, "sshar">;
+} // Predicates = [HasStdExtP, IsRV32]
+
+let Predicates = [HasStdExtP, IsRV64] in {
+def PSLL_WS     : RVPBinary1F1W<0b000, 0b01, 0b010, "psll.ws">;
+def PADD_WS     : RVPBinary1F1W<0b001, 0b01, 0b010, "padd.ws">;
+def PSSHA_WS    : RVPBinary1F1W<0b110, 0b01, 0b010, "pssha.ws">;
+def PSSHAR_WS   : RVPBinary1F1W<0b111, 0b01, 0b010, "psshar.ws">;
+def SHA         : RVPBinary1F1W<0b110, 0b11, 0b010, "sha">;
+def SHAR        : RVPBinary1F1W<0b111, 0b11, 0b010, "shar">;
+} // Predicates = [HasStdExtP, IsRV64]
+
+let Predicates = [HasStdExtP] in {
+def PSRLI_B    : RVPUnary1F0<0b000, uimm3_ext7, "psrli.b">;
+}
